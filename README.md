@@ -1,4 +1,4 @@
-# go-study App
+# go-study rest-api
 
 Key-value in-memory rest-api sample.
 
