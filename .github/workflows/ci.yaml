@@ -40,7 +40,8 @@ jobs:
         run: go build .
 
       # Run vet & lint on the code
-      - name: Run vet & lint
+      - name: Run vet & fmt & lint
         run: |
           go vet .
+          gofmt -l .
           golint .
