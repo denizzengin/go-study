@@ -33,4 +33,4 @@ jobs:
 
       # Run build of the application
       - name: Lint
-        run: golint
+        run: go lint
