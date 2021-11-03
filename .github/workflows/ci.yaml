@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           go version          
-          go get -u golang.org/x/lint/golint -b $(go env GOPATH)/bin
+          go get -u golang.org/x/lint/golint
 
       # Run build of the application
       - name: Lint
-        run: golint
+        run: golint .
