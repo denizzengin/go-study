@@ -22,7 +22,7 @@ func setHandler(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	var input KeyValuePair
 	json.Unmarshal(reqBody, &input)
-	Set(input.Key, input.Value)
+	set(input.Key, input.Value)
 	json.NewEncoder(w).Encode(input)
 }
 
@@ -30,9 +30,9 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key, ok := vars["id"]
 	if !ok {
-		fmt.Fprintf(w, "%+v", NotFoundId)
+		fmt.Fprintf(w, "%+v", NotFoundID)
 	}
-	pair, err := Get(key)
+	pair, err := get(key)
 	if err != nil {
 		fmt.Fprintf(w, "%+v", string(err.Error()))
 	} else {
@@ -41,7 +41,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func flushHandler(w http.ResponseWriter, r *http.Request) {
-	Flush()
+	flush()
 	fmt.Fprintf(w, "%+v", SuccessfullyFlushedMessage)
 }
 
@@ -63,7 +63,7 @@ func logHandler(logfile *os.File, fn http.HandlerFunc) http.HandlerFunc {
 }
 
 func handleRequests() {
-	logFile := OpenFile(LogFile)
+	logFile := openFile(LogFile)
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/set", logHandler(logFile, setHandler)).Methods("POST")
@@ -73,24 +73,25 @@ func handleRequests() {
 	log.Fatal(e)
 }
 
-func WriteAsync(quit chan bool) {
+func writeAsync(quit chan bool) {
 	// Store every two minutes
 	ticker := time.NewTicker(2 * time.Minute)
 	for {
 		select {
-		case <- quit:
+		case <-quit:
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			WriteStore()
+			writeStore()
 		}
 	}
 }
 
 func main() {
 	fmt.Println("Waiting request...")
+	readStoreFirst() // Moved here from init because of wrong use.
 	quit := make(chan bool)
 	defer close(quit)
-	go WriteAsync(quit)
+	go writeAsync(quit)
 	handleRequests()
 }

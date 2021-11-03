@@ -8,15 +8,18 @@ import (
 	"time"
 )
 
+// StoreKeyValuePair : nested core object
 type StoreKeyValuePair struct {
 	Key   string `json:"Key"`
 	Value string `json:"Value"`
 }
 
+// StoreKeyValuePairs : wrapper of core object
 type StoreKeyValuePairs struct {
 	StoreKeyValuePairs []StoreKeyValuePairAll `json:"elements"`
 }
 
+// StoreKeyValuePairAll : root object for file data
 type StoreKeyValuePairAll struct {
 	Data     []StoreKeyValuePair `json:"Data"`
 	LastTime time.Time           `json:"LastTime"`
@@ -36,26 +39,26 @@ func (t byLastTime) Less(i, j int) bool {
 	return t[i].LastTime.Sub(t[j].LastTime) > 0
 }
 
-func WriteStore() {
-	file := OpenFile(StoreFileName)
+func writeStore() {
+	file := openFile(StoreFileName)
 	defer file.Close()
-	allRecords := ReadStore(false)	
+	allRecords := readStore(false)
 	data := convertToDbObject()
 	allRecords.StoreKeyValuePairs = append(allRecords.StoreKeyValuePairs, data)
 	byteArray, err := json.Marshal(allRecords)
 	if err != nil {
 		panic(err)
-	}	
+	}
 	if _, err := file.Write(byteArray); err != nil {
 		panic(err)
 	}
 }
 
-func ReadStore(initialize bool) *StoreKeyValuePairs {
+func readStore(initialize bool) *StoreKeyValuePairs {
 	if initialize {
-		customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}	
-	}	
-	file := OpenFile(StoreFileName)
+		customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}
+	}
+	file := openFile(StoreFileName)
 	defer file.Close()
 	data, err := ioutil.ReadFile(file.Name())
 	if err != nil {
@@ -67,8 +70,8 @@ func ReadStore(initialize bool) *StoreKeyValuePairs {
 	return &all
 }
 
-func ReadStoreFirst(){
-	allRecords := ReadStore(true)
+func readStoreFirst() {
+	allRecords := readStore(true)
 	if len(allRecords.StoreKeyValuePairs) > 0 {
 		lastMapObj := allRecords.StoreKeyValuePairs[0]
 		for i := 0; i < len(lastMapObj.Data); i++ {

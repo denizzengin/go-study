@@ -6,11 +6,13 @@ import (
 	"sync"
 )
 
+// KeyValuePair : response model
 type KeyValuePair struct {
 	Key   string      `json:"Key"`
 	Value interface{} `json:"Value"`
 }
 
+// InMemoryMap : data struct
 type InMemoryMap struct {
 	KeyValuePair map[string]string
 }
@@ -18,13 +20,13 @@ type InMemoryMap struct {
 var mutex = &sync.Mutex{}
 var customMap *InMemoryMap
 
-func Set(key string, val interface{}) {
+func set(key string, val interface{}) {
 	mutex.Lock()
 	customMap.KeyValuePair[key] = fmt.Sprint(val)
 	mutex.Unlock()
 }
 
-func Get(key string) (string, error) {
+func get(key string) (string, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if val, ok := customMap.KeyValuePair[key]; ok {
@@ -33,21 +35,17 @@ func Get(key string) (string, error) {
 	return "", ErrNotFound
 }
 
-func Flush() {
+func flush() {
 	mutex.Lock()
 	customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}
 	mutex.Unlock()
 }
 
-func OpenFile(fileName string) *os.File {
+func openFile(fileName string) *os.File {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
 
 	return file
-}
-
-func init() {
-	ReadStoreFirst()
 }
