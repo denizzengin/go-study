@@ -15,20 +15,20 @@ type KeyValuePair struct {
 // InMemoryMap : data struct
 type InMemoryMap struct {
 	KeyValuePair map[string]string
+	Mutex        *sync.Mutex
 }
 
-var mutex = &sync.Mutex{}
 var customMap *InMemoryMap
 
 func set(key string, val interface{}) {
-	mutex.Lock()
+	customMap.Mutex.Lock()
 	customMap.KeyValuePair[key] = fmt.Sprint(val)
-	mutex.Unlock()
+	customMap.Mutex.Unlock()
 }
 
 func get(key string) (string, error) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	customMap.Mutex.Lock()
+	defer customMap.Mutex.Unlock()
 	if val, ok := customMap.KeyValuePair[key]; ok {
 		return val, nil
 	}
@@ -36,9 +36,7 @@ func get(key string) (string, error) {
 }
 
 func flush() {
-	mutex.Lock()
-	customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}
-	mutex.Unlock()
+	customMap = &InMemoryMap{KeyValuePair: make(map[string]string), Mutex: &sync.Mutex{}}
 }
 
 func openFile(fileName string) *os.File {

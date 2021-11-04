@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -47,6 +48,6 @@ func TestStoreReadFirst(t *testing.T) {
 }
 
 func TestStoreWrite(t *testing.T) {
-	customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}
+	customMap = &InMemoryMap{KeyValuePair: make(map[string]string), Mutex: &sync.Mutex{}}
 	writeStore()
 }

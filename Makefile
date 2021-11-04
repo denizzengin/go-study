@@ -1,5 +1,8 @@
 build:
 	go build -o main .
+	go vet
+	go fmt
+	golint
 
 run:
 	go run  .

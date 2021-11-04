@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -56,7 +57,7 @@ func writeStore() {
 
 func readStore(initialize bool) *StoreKeyValuePairs {
 	if initialize {
-		customMap = &InMemoryMap{KeyValuePair: make(map[string]string)}
+		customMap = &InMemoryMap{KeyValuePair: make(map[string]string), Mutex: &sync.Mutex{}}
 	}
 	file := openFile(StoreFileName)
 	defer file.Close()
