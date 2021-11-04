@@ -1,35 +1,29 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"os"
+	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
 )
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Go study in-memory rest-api")
-}
 
 func setHandler(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	var input KeyValuePair
 	json.Unmarshal(reqBody, &input)
 	set(input.Key, input.Value)
-	json.NewEncoder(w).Encode(input)
+	w.WriteHeader(http.StatusCreated)
+	s, _ := json.Marshal(input)
+	w.Write(s)
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key, ok := vars["id"]
-	if !ok {
+	key := strings.TrimPrefix(r.URL.Path, "/get/")
+	if key == "" {
 		fmt.Fprintf(w, "%+v", NotFoundID)
 	}
 	pair, err := get(key)
@@ -42,34 +36,33 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 func flushHandler(w http.ResponseWriter, r *http.Request) {
 	flush()
-	fmt.Fprintf(w, "%+v", SuccessfullyFlushedMessage)
+	w.WriteHeader(http.StatusNoContent)
 }
 
-// See : https://stackoverflow.com/questions/38443889/logging-http-responses-in-addition-to-requests
-func logHandler(logfile *os.File, fn http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer logfile.Close()
-		x, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
-			return
-		}
-		logfile.WriteString(fmt.Sprintf("%q \n", x))
-		rec := httptest.NewRecorder()
-		fn(rec, r)
-		logfile.WriteString(fmt.Sprintf("%q \n", rec.Body))
-		rec.Body.WriteTo(w)
+func logger(w http.ResponseWriter, r *http.Request) {
+	// Log request.
+	c, e := ioutil.ReadAll(r.Body)
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(c))
+	if e != nil {
+		panic(e)
+	}
+	log.Printf("%s\t\t%s\t\t%s", r.Method, r.RequestURI, c)
+
+	switch {
+	case r.Method == http.MethodGet && strings.TrimPrefix(r.URL.Path, "/get/") != "":
+		getHandler(w, r)
+	case r.Method == http.MethodPost && strings.TrimPrefix(r.URL.Path, "/set") == "":
+		setHandler(w, r)
+	case r.Method == http.MethodDelete && strings.TrimPrefix(r.URL.Path, "/flush") == "":
+		flushHandler(w, r)
+	default:
+		http.NotFound(w, r)
 	}
 }
 
 func handleRequests() {
-	logFile := openFile(LogFile)
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", homePage)
-	router.HandleFunc("/set", logHandler(logFile, setHandler)).Methods("POST")
-	router.HandleFunc("/get/{id}", logHandler(logFile, getHandler))
-	router.HandleFunc("/flush", logHandler(logFile, flushHandler)).Methods("DELETE")
-	e := http.ListenAndServe(":8084", router)
+	http.HandleFunc("/", logger)
+	e := http.ListenAndServe(":8084", nil)
 	log.Fatal(e)
 }
 

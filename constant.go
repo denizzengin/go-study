@@ -11,8 +11,7 @@ var ErrNotFound = errors.New("Key not found in memory map")
 // NotFoundID : message of the missing parameter
 const (
 	// LogFile : File name of log
-	LogFile                    string = "development.log"
-	NotFoundID                 string = "id is missing in parameters"
-	SuccessfullyFlushedMessage string = "Successfully flushed"
-	StoreFileName              string = "TIMESTAMP-data.json"
+	LogFile       string = "development.log"
+	NotFoundID    string = "id is missing in parameters"
+	StoreFileName string = "TIMESTAMP-data.json"
 )
